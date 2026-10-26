@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Сигнальні жести</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Концепція: польовий тренажер на одному екрані смартфона. Схеми жестів у стилі навчального плаката: чорна фігура, червона сигнальна рука. */
+:root{
+  --bg:#E6EAE1; --surface:#F6F7F2; --fg:#18211A; --muted:#566057; --line:#C6CCBF;
+  --accent:#33502F; --accent-fg:#F3F6EE; --signal:#B3261E; --gold:#7D5F0E;
+  --ok:#2E7D3E; --okbg:#DCEBDC; --bad:#B3261E; --badbg:#F4DBD7;
+  --font-display:'Oswald','Arial Narrow',Impact,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111712; --surface:#1A231C; --fg:#E7ECE2; --muted:#9BA89C; --line:#2D3A2F;
+    --accent:#A9C99A; --accent-fg:#14201A; --signal:#EA5D52; --gold:#D9AE4A;
+    --ok:#6FBF7F; --okbg:#1E3626; --bad:#EA5D52; --badbg:#41211E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111712; --surface:#1A231C; --fg:#E7ECE2; --muted:#9BA89C; --line:#2D3A2F;
+  --accent:#A9C99A; --accent-fg:#14201A; --signal:#EA5D52; --gold:#D9AE4A;
+  --ok:#6FBF7F; --okbg:#1E3626; --bad:#EA5D52; --badbg:#41211E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.45 var(--font-body);
+  padding-block:16px 32px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:520px;margin:0 auto;min-width:0}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.muted{color:var(--muted)}
+
+/* фігури */
+.fig{display:block;overflow:visible}
+.fig .b{fill:none;stroke:var(--fg);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.fig .m{fill:none;stroke:var(--muted);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.fig .r{fill:none;stroke:var(--signal);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.fig .ar{fill:none;stroke:var(--signal);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.fig .rf{fill:var(--signal);stroke:var(--signal);stroke-width:2}
+.fig .ro{fill:var(--surface);stroke:var(--signal);stroke-width:3}
+.fig circle.b{stroke-width:4}
+
+/* головний екран */
+.hero{display:grid;gap:10px;padding-block:6px 14px}
+.hero h1{font-size:44px;line-height:1;text-transform:uppercase}
+.hero p{margin:0;color:var(--muted);max-width:44ch}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 6px 8px}
+.strip div{display:grid;justify-items:center;gap:6px;min-width:0}
+.strip .fig{height:84px;width:auto}
+.strip span{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:center}
+.status{display:flex;align-items:center;gap:10px;margin-block:14px 10px;font-size:14px}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1.5px solid var(--line);color:var(--muted)}
+.pill.ok{border-color:var(--ok);color:var(--ok)}
+.modes{display:grid;gap:10px}
+.mode{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;text-align:left;width:100%;padding:14px 16px;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;min-height:64px}
+.mode:active{transform:scale(.99)}
+.mode h3{font-size:20px;text-transform:uppercase}
+.mode small{grid-column:1;color:var(--muted);font-size:14px}
+.mode .chip{grid-row:1 / span 2;grid-column:2;font-family:var(--font-display);font-size:18px;color:var(--gold)}
+.mode.main{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.mode.main small,.mode.main .chip{color:var(--accent-fg);opacity:.85}
+.foot{margin-top:18px;font-size:13px;color:var(--muted)}
+
+/* верхня панель гри */
+.top{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:10px}
+.back{width:44px;height:44px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);font-size:20px;line-height:1}
+.count{font-family:var(--font-display);font-size:20px;letter-spacing:.04em}
+.side{font-size:13px;font-weight:600;color:var(--gold);text-align:right;min-width:3em}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.tbar i{background:var(--gold);transition:none}
+.tbar i.low{background:var(--signal)}
+.q{display:grid;gap:14px}
+.q h2{font-size:24px;line-height:1.2}
+.stage{display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px}
+.stage .fig{height:190px;width:auto}
+.opts{display:grid;gap:10px}
+.opts.figs{grid-template-columns:1fr 1fr}
+.opt{display:block;width:100%;text-align:left;padding:13px 14px;min-height:50px;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;font-size:16px}
+.opts.figs3{grid-template-columns:repeat(3,1fr);gap:8px}
+.opts.figs3 .opt.figopt{padding:6px}
+.opts.figs3 .opt.figopt .fig{height:96px}
+.opt.figopt{display:grid;place-items:center;padding:10px}
+.opt.figopt .fig{height:128px;width:auto}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.opt:disabled{cursor:default}
+.opt:disabled:not(.ok):not(.bad){opacity:.6}
+.fb{padding:12px 14px;border-radius:8px;border-left:5px solid var(--ok);background:var(--okbg);font-size:15px}
+.fb.bad{border-left-color:var(--bad);background:var(--badbg)}
+.fb b{display:block;font-family:var(--font-display);font-size:18px;letter-spacing:.03em;text-transform:uppercase;margin-bottom:2px}
+.btn{display:block;width:100%;min-height:52px;padding:12px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-fg);font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.btn.ghost{background:transparent;color:var(--fg);border:1.5px solid var(--line)}
+.btns{display:grid;gap:10px;margin-top:6px}
+
+/* результат */
+.res{display:grid;gap:14px;padding-top:8px}
+.score{font-family:var(--font-display);font-weight:700;font-size:92px;line-height:.95}
+.score small{font-size:36px;color:var(--muted);font-weight:500}
+.verdict{font-family:var(--font-display);font-size:26px;text-transform:uppercase;letter-spacing:.03em}
+.verdict.ok{color:var(--ok)} .verdict.bad{color:var(--bad)}
+.rev{display:grid;gap:8px}
+.rev div{padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:14px}
+.rev b{display:block;font-size:14px;margin-bottom:2px}
+
+/* довідник */
+.refgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.refc{display:grid;gap:8px;justify-items:center;text-align:center;padding:12px 8px;border:1px solid var(--line);background:var(--surface);border-radius:6px;min-width:0}
+.refc .fig{height:120px;width:auto}
+.refc h3{font-size:16px;text-transform:uppercase;line-height:1.15}
+.refc p{margin:0;font-size:13px;color:var(--muted);line-height:1.35}
+.extra{display:grid;gap:0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.extra div{display:grid;grid-template-columns:minmax(0,9.5em) 1fr;gap:12px;padding:10px 12px;font-size:14px}
+.extra div+div{border-top:1px solid var(--line)}
+.extra b{font-weight:600}
+.sec{margin-block:22px 10px;font-size:22px;text-transform:uppercase}
+
+/* ланцюжок */
+.slots{display:grid;gap:8px}
+.slot{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;min-height:56px;padding:8px 12px;border:1.5px dashed var(--line);border-radius:8px;color:var(--muted);font-size:15px}
+.slot .n{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);font-family:var(--font-display);font-size:16px}
+.slot.full{border-style:solid;border-color:var(--ok);background:var(--okbg);color:var(--fg)}
+.slot.full .n{background:var(--ok);border-color:var(--ok);color:var(--accent-fg)}
+.pool{display:grid;gap:8px}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translateX(-6px)}50%{transform:translateX(6px)}80%{transform:translateX(-3px)}}
+.chain{display:flex;align-items:center;justify-content:center;gap:0;padding:14px 4px}
+.node{width:38px;height:38px;border-radius:50%;border:3px solid var(--muted);background:var(--surface);display:grid;place-items:center;font-family:var(--font-display);font-size:15px;animation:pulse .6s both}
+.node.c{border-color:var(--signal);color:var(--signal)}
+.link{flex:1;max-width:30px;height:3px;background:var(--line)}
+@keyframes pulse{0%{transform:scale(.6);opacity:.2}60%{transform:scale(1.18);border-color:var(--signal)}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.hero h1{font-size:38px}.strip .fig{height:70px}.stage .fig{height:160px}}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ---------- допоміжні ---------- */
+var app=document.getElementById('app');
+var store={};
+try{store=JSON.parse(localStorage.getItem('sg_zhesty_v2')||'{}')}catch(e){store={}}
+function save(){try{localStorage.setItem('sg_zhesty_v2',JSON.stringify(store))}catch(e){}}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+var timerId=null;
+function clearT(){if(timerId){clearInterval(timerId);timerId=null}}
+
+function A(x1,y1,x2,y2){
+  var a=Math.atan2(y2-y1,x2-x1),l=6,f=function(n){return n.toFixed(1)};
+  var h1=[x2-l*Math.cos(a-.5),y2-l*Math.sin(a-.5)],h2=[x2-l*Math.cos(a+.5),y2-l*Math.sin(a+.5)];
+  return '<path class="ar" d="M'+x1+' '+y1+'L'+x2+' '+y2+'M'+f(h1[0])+' '+f(h1[1])+'L'+x2+' '+y2+'L'+f(h2[0])+' '+f(h2[1])+'"/>';
+}
+
+/* ---------- жести ---------- */
+var G=[
+ {id:1,short:'Стій',name:'Стій / завмри',desc:'піднятий кулак або відкрита долоня, усі застигають',arms:[[[50,38],[53,17]]],hand:'fist',ex:A(70,26,70,8)},
+ {id:2,short:'Рушай',name:'Рушай / вперед',desc:'рука вказує напрямок, плавний змах уперед',arms:[[[50,38],[76,24]]],hand:'open',ex:A(60,18,88,14)},
+ {id:3,short:'Збір',name:'Збір',desc:'рука вгору, кругові рухи над головою',arms:[[[50,38],[53,17]]],hand:'open',ex:'<path class="ar" d="M40 13C38 0 68 0 66 11"/><path class="ar" d="M61 8L66 11L68 5"/>'},
+ {id:4,short:'Розосередитися',name:'Розосередитися',desc:'рука вгору, змахи в різні боки',arms:[[[50,38],[53,17]]],hand:'open',ex:A(46,7,28,7)+A(60,7,78,7)},
+ {id:5,short:'Прискорити',name:'Прискорити рух',desc:'кулак піднято та опущено кількома рухами',arms:[[[50,38],[53,17]]],hand:'fist',ex:A(68,24,68,6)+A(78,6,78,24)},
+ {id:6,short:'Сповільнити',name:'Сповільнити рух',desc:'розкрита долоня опускається вниз кількома рухами',arms:[[[50,38],[80,38]]],hand:'open',ex:A(88,26,88,52)},
+ {id:7,short:'Лінія',name:'Лінія (шеренга)',desc:'руки в сторони на рівні плечей',arms:[[[50,38],[12,38]],[[50,38],[88,38]]],rest:false,hand:null,ex:''},
+ {id:8,short:'Клин',name:'Клин',desc:'руки під кутом, що показує форму клина',arms:[[[50,38],[22,62]],[[50,38],[78,62]]],rest:false,hand:null,ex:''},
+ {id:9,short:'Уступ',name:'Уступ ліворуч',desc:'рука під кутом у відповідний бік',arms:[[[50,38],[80,10]],[[50,38],[20,66]]],rest:false,hand:null,ex:''},
+ {id:10,short:'Небезпечна ділянка',name:'Небезпечна ділянка',desc:'рух руки впоперек шиї (так у системі FM 21-60)',arms:[[[50,38],[72,40]]],hand:'open',ex:A(74,30,38,30)},
+ {id:11,short:'Слухай',name:'Слухай',desc:'рука до вуха',arms:[[[50,38],[68,48],[59,26]]],hand:'open',ex:'<path class="ar" d="M68 18l6-3M70 25l7 0"/>'},
+ {id:12,short:'Припинити вогонь',name:'Припинити вогонь',desc:'рука перед собою, кілька махів з боку в бік',arms:[[[50,38],[70,46],[74,26]]],hand:'open',ex:A(70,12,56,12)+A(78,12,92,12)}
+];
+var EXTRA=[
+ {name:'Увага',desc:'піднята рука, привертання уваги до командира'},
+ {name:'Змінити напрямок',desc:'рука вказує на новий напрямок'},
+ {name:'Противник у зоні видимості',desc:'вказівка зброєю чи рукою на ціль, кількість пальцями'},
+ {name:'Укриття / лягай',desc:'рука вниз, долоня до землі'},
+ {name:'Відкрити вогонь',desc:'рука вказує на ціль, виразний жест на вогонь'},
+ {name:'Не розумію / повторити',desc:'руки роз’єднані, жест запитання'},
+ {name:'Готовий',desc:'піднятий палець або піднята рука'}
+];
+var ALLNAMES=G.map(function(g){return g.name}).concat(EXTRA.map(function(g){return g.name}));
+
+function fig(g){
+  var rest=g.rest!==false?'<polyline class="m" points="50,38 44,58 43,74"/>':'';
+  var arms=g.arms.map(function(a){return '<polyline class="r" points="'+a.map(function(p){return p.join(',')}).join(' ')+'"/>'}).join('');
+  var hand='';
+  if(g.hand){var a0=g.arms[0],p=a0[a0.length-1];hand='<circle class="'+(g.hand==='fist'?'rf':'ro')+'" cx="'+p[0]+'" cy="'+p[1]+'" r="4.2"/>'}
+  return '<svg class="fig" viewBox="0 0 100 140" aria-hidden="true"><circle class="b" cx="50" cy="22" r="8"/><line class="b" x1="50" y1="30" x2="50" y2="80"/><polyline class="b" points="42,128 50,80 58,128"/>'+rest+arms+hand+(g.ex||'')+'</svg>';
+}
+
+/* ---------- запитання ---------- */
+function sim(a,b){
+  var s=0;if(a.hand===b.hand)s+=2;if(a.arms.length===b.arms.length)s+=2;
+  var ta=a.arms[0][a.arms[0].length-1],tb=b.arms[0][b.arms[0].length-1];
+  s+=3-Math.min(3,Math.hypot(ta[0]-tb[0],ta[1]-tb[1])/15);return s;
+}
+/* хибні варіанти добираються серед найбільш схожих жестів */
+function others(g,n){
+  var c=G.filter(function(x){return x!==g}).sort(function(a,b){return sim(g,b)-sim(g,a)});
+  return shuffle(c.slice(0,n+2)).slice(0,n);
+}
+function qFig(g){
+  var o=shuffle([g].concat(others(g,3)));
+  return {prompt:'Що означає цей жест?',figure:fig(g),opts:o.map(function(x){return x.name}),ans:o.indexOf(g),
+    explain:'«'+g.name+'»: '+g.desc+'.',tag:g.name,answerText:g.name};
+}
+function qCmd(g){
+  var o=shuffle([g].concat(others(g,5)));
+  return {prompt:'Командир подає команду «'+g.name+'». Який це жест?',figOpts:o.map(fig),cols:3,ans:o.indexOf(g),
+    explain:'«'+g.name+'»: '+g.desc+'.',tag:g.name,answerText:g.name};
+}
+function qDesc(g){
+  var pool=ALLNAMES.filter(function(n){return n!==g.name});
+  var o=shuffle([g.name].concat(shuffle(pool).slice(0,3)));
+  return {prompt:'Який сигнал означає: '+g.desc+'?',opts:o,ans:o.indexOf(g.name),
+    explain:'«'+g.name+'»: '+g.desc+'.',tag:g.name,answerText:g.name};
+}
+var FACTS=[
+ {q:'Що має зробити кожен, хто побачив жест командира?',c:'Повторити його далі по ланцюжку',w:['Чекати голосового підтвердження','Запитати командира, що це значить','Нічого, якщо жест подано не йому'],e:'Кожен, хто бачить жест, повторює його далі. Зрозуміти жест означає виконати його.'},
+ {q:'Чому жести — основа зв’язку в малій групі?',c:'Не видають позицію звуком',w:['Їх видно за будь-якої погоди й вночі','Їх можна подавати в будь-якому порядку','Вони не потребують візуального контакту'],e:'Жести не видають позицію звуком, не залежать від шуму бою чи вітру й не потребують техніки.'},
+ {q:'Що обмежує використання жестів?',c:'Потрібен візуальний контакт',w:['Потрібна радіостанція','Їх чутно на великій відстані','Вони залежать від шуму бою'],e:'Ніч, туман, рослинність і дим знижують видимість. До того ж противник може побачити сигнал.'},
+ {q:'Коли командир переходить до наступної команди?',c:'Після підтвердження, що сигнал зрозуміли',w:['Одразу після подання жесту','Через десять секунд','Коли перший боєць почне рух'],e:'Командир переходить далі тільки після підтвердження.'},
+ {q:'Хто в ланцюжку підтверджує, що сигнал зрозумілий?',c:'Останній боєць',w:['Командир','Найближчий до командира боєць','Усі одночасно голосом'],e:'Останній у ланцюжку підтверджує сигналом «Готовий» або «Зрозумів».'},
+ {q:'Чому в підрозділі потрібен єдиний набір жестів?',c:'Жести можуть відрізнятися між підрозділами',w:['Щоб не вчити жести взагалі','Щоб командир подавав жести будь-як','Бо жести однакові в усіх підрозділах'],e:'Жести відрізняються між підрозділами, тому в групі погоджують єдиний набір (SOP).'},
+ {q:'Як слід подавати жест?',c:'Чітко, повільно й виразно, у зоні видимості',w:['Якнайшвидше, щоб встигнути','Коли боєць дивиться під ноги','Відпустивши зброю обома руками'],e:'Вимагають чіткості, а не швидкості. Зброю без потреби не відпускають.'},
+ {q:'Які три рівні жестів прийнято в арміях НАТО?',c:'Базові, родові та жести підрозділу',w:['Денні, нічні та радіо','Командирські, сержантські та рядові','Піхотні, танкові та авіаційні'],e:'Базові зрозумілі всім військовим, родові відповідають роду військ, унікальні напрацьовані в підрозділі.'},
+ {q:'Яка частка жестів має бути виконана без помилок для заліку?',c:'Не менше 80 %',w:['Усі 100 %','Не менше 50 %','Не менше 65 %'],e:'Норматив заліку: не менше 80 % жестів виконано без помилок.'},
+ {q:'Жест подано, але останній боєць не підтвердив. Що має зробити командир?',c:'Повторити сигнал і не переходити далі',w:['Перейти до наступної команди','Вважати сигнал зрозумілим','Подати команду голосом'],e:'Без підтвердження командир не переходить до наступної команди: сигнал подають знову.'},
+ {q:'Боєць не впевнений, що означає жест. Як діяти?',c:'Показати сигналом «Не розумію / повторити»',w:['Виконати найімовірніший варіант','Скопіювати дії сусіда','Гукнути командиру голосом'],e:'Зрозуміти жест означає виконати його, тому здогади небезпечні. Для цього є сигнал «Не розумію / повторити».'},
+ {q:'Піднятий кулак: яка це команда?',c:'Стій / завмри',w:['Збір','Увага','Слухай'],e:'Піднятий кулак означає «Стій / завмри». Кулак, що піднімається й опускається кількома рухами, означає «Прискорити рух».'},
+ {q:'Командир подав «Лінія». Яке положення рук?',c:'Руки в сторони на рівні плечей',w:['Руки під кутом донизу','Одна рука вгору, інша вниз','Рука до вуха'],e:'«Лінія (шеренга)»: руки в сторони на рівні плечей. Руки під кутом донизу означають «Клин».'},
+ {q:'Які ознаки демаскують бійця на місцевості?',c:'Силует, тінь, блиск, рух',w:['Звук, запах, колір, смак','Зброя, ремінь, шолом, рюкзак','Голос, свисток, радіо, ліхтар'],e:'Правило маскування: силует, тінь, блиск, рух.'}
+];
+function qFact(f){
+  var o=shuffle([f.c].concat(f.w));
+  return {prompt:f.q,opts:o,ans:o.indexOf(f.c),explain:f.e,tag:f.q,answerText:f.c};
+}
+function take(arr,n){return shuffle(arr).slice(0,n)}
+
+/* ---------- екрани ---------- */
+function home(){
+  clearT();
+  var strip=[G[0],G[1],G[6],G[7]].map(function(g){return '<div>'+fig(g)+'<span>'+g.short+'</span></div>'}).join('');
+  var zal=store.passed?'<span class="pill ok">Залік зараховано</span><span class="muted">найкращий результат '+store.zalik+' з 15</span>'
+    :'<span class="pill">Залік не складено</span><span class="muted">потрібно 12 з 15 (80 %)</span>';
+  function chip(k,suf){return store[k]!==undefined?'<span class="chip">'+store[k]+suf+'</span>':''}
+  app.innerHTML=
+   '<header class="hero"><div class="eyebrow">Тактична підготовка · тренажер</div><h1>Сигнальні жести піхотинця</h1>'+
+   '<p>Вивчіть жести, відпрацюйте реакцію та складіть залік. Командир показує жест, відділення виконує без слів.</p></header>'+
+   '<div class="strip" role="img" aria-label="Приклади жестів: стій, рушай, лінія, клин">'+strip+'</div>'+
+   '<div class="status">'+zal+'</div>'+
+   '<div class="modes">'+
+   '<button class="mode" data-m="ref"><h3>Довідник</h3><small>19 команд: схеми й опис</small></button>'+
+   '<button class="mode" data-m="react"><h3>Реакція</h3><small>Таймер скорочується, 3 життя</small>'+chip('react','/12')+'</button>'+
+   '<button class="mode" data-m="cmd"><h3>Командир каже</h3><small>Серед 6 схожих схем, 14 секунд</small>'+chip('cmd','/10')+'</button>'+
+   '<button class="mode" data-m="chain"><h3>Ланцюжок сигналу</h3><small>6 кроків, 3 помилки — починай знову</small>'+(store.chain!==undefined?'<span class="chip">'+(store.chain===0?'без помилок':store.chain+' пом.')+'</span>':'')+'</button>'+
+   '<button class="mode main" data-m="zalik"><h3>Залік</h3><small>15 запитань на час, норматив 80 %</small>'+chip('zalik','/15')+'</button>'+
+   '</div>'+
+   '<p class="foot">Схеми спрощені й призначені для першого знайомства. Точну форму жестів звіряйте з книгою Ларсена та SOP вашого підрозділу.</p>';
+  app.querySelectorAll('.mode').forEach(function(b){b.onclick=function(){start(b.dataset.m)}});
+  window.scrollTo(0,0);
+}
+function start(m){
+  if(m==='ref')return reference();
+  if(m==='chain')return chain();
+  if(m==='react')return runQuiz({id:'react',title:'Реакція',qs:take(G,12).map(qFig),timer:function(n){return Math.max(2500,7000-n*400)},lives:3,pass:null});
+  if(m==='cmd')return runQuiz({id:'cmd',title:'Командир каже',qs:take(G,10).map(qCmd),timer:14000,pass:null});
+  if(m==='zalik'){
+    var qs=take(G,4).map(qFig).concat(take(G,4).map(qCmd),take(EXTRA,2).map(qDesc),take(FACTS,5).map(qFact));
+    return runQuiz({id:'zalik',title:'Залік',qs:shuffle(qs),timer:20000,pass:12});
+  }
+}
+function topbar(label,side){
+  return '<div class="top"><button class="back" id="bk" aria-label="До меню">←</button><div class="count">'+label+'</div><div class="side">'+(side||'')+'</div></div>';
+}
+
+function reference(){
+  clearT();
+  var grid=G.map(function(g){return '<div class="refc">'+fig(g)+'<h3>'+g.name+'</h3><p>'+cap(g.desc)+'</p></div>'}).join('');
+  var ex=EXTRA.map(function(g){return '<div><b>'+g.name+'</b><span class="muted">'+cap(g.desc)+'</span></div>'}).join('');
+  app.innerHTML=topbar('Довідник')+
+   '<div class="refgrid">'+grid+'</div>'+
+   '<h2 class="sec">Ще сім команд</h2><div class="extra">'+ex+'</div>'+
+   '<h2 class="sec">Правила</h2><div class="extra">'+
+   '<div><b>1</b><span>Жест подає командир або передає по ланцюжку.</span></div>'+
+   '<div><b>2</b><span>Кожен, хто бачить жест, повторює його далі.</span></div>'+
+   '<div><b>3</b><span>Подавати чітко, повільно й виразно, у зоні видимості, тримаючи зброю.</span></div>'+
+   '<div><b>4</b><span>Зрозуміти жест означає виконати його.</span></div></div>'+
+   '<div class="btns"><button class="btn" id="go">До тренування</button></div>';
+  document.getElementById('bk').onclick=home;
+  document.getElementById('go').onclick=home;
+  window.scrollTo(0,0);
+}
+
+function runQuiz(cfg){
+  var i=0,ok=0,streak=0,bestStreak=0,wrong=[],locked=false,total=cfg.qs.length,lives=cfg.lives||0,over=false;
+  function show(){
+    clearT();locked=false;
+    var q=cfg.qs[i];
+    var body='';
+    if(q.figure)body+='<div class="stage">'+q.figure+'</div>';
+    var opts;
+    if(q.figOpts)opts='<div class="opts figs'+(q.cols===3?' figs3':'')+'">'+q.figOpts.map(function(f,k){return '<button class="opt figopt" data-k="'+k+'" aria-label="Варіант '+(k+1)+'">'+f+'</button>'}).join('')+'</div>';
+    else opts='<div class="opts">'+q.opts.map(function(t,k){return '<button class="opt" data-k="'+k+'">'+t+'</button>'}).join('')+'</div>';
+    var T=typeof cfg.timer==='function'?cfg.timer(i):cfg.timer;
+    var side=cfg.lives?('Життя '+new Array(lives+1).join('♥')+' · '+streak):(cfg.id==='zalik'?'Залік':(T?'Серія '+streak:''));
+    app.innerHTML=topbar((i+1)+' / '+total,side)+
+      '<div class="bar"><i style="width:'+(i/total*100)+'%"></i></div>'+
+      (T?'<div class="bar tbar"><i id="tm" style="width:100%"></i></div>':'')+
+      '<div class="q"><h2>'+q.prompt+'</h2>'+body+opts+'<div id="fb" aria-live="polite"></div><div id="nx"></div></div>';
+    document.getElementById('bk').onclick=home;
+    app.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){answer(+b.dataset.k)}});
+    window.scrollTo(0,0);
+    if(T){
+      var t0=Date.now(),tm=document.getElementById('tm');
+      timerId=setInterval(function(){
+        var left=Math.max(0,1-(Date.now()-t0)/T);
+        tm.style.width=(left*100)+'%';
+        if(left<.3)tm.className='low';
+        if(left<=0){clearT();answer(-1)}
+      },80);
+    }
+  }
+  function answer(k){
+    if(locked)return;locked=true;clearT();
+    var q=cfg.qs[i],right=(k===q.ans);
+    app.querySelectorAll('.opt').forEach(function(b){
+      var n=+b.dataset.k;b.disabled=true;
+      if(n===q.ans)b.classList.add('ok');
+      else if(n===k)b.classList.add('bad');
+    });
+    if(right){ok++;streak++;if(streak>bestStreak)bestStreak=streak}
+    else{streak=0;wrong.push(q);if(cfg.lives){lives--;if(lives<=0)over=true}}
+    var head=right?'Вірно':(k===-1?'Час вийшов':'Не так');
+    var fb=document.getElementById('fb');
+    fb.innerHTML='<div class="fb'+(right?'':' bad')+'"><b>'+head+'</b>'+q.explain+'</div>';
+    document.getElementById('nx').innerHTML='<div class="btns"><button class="btn" id="next">'+(over?'Результат':(i<total-1?'Далі':'Результат'))+'</button></div>';
+    var nb=document.getElementById('next');
+    nb.onclick=function(){i++;if(!over&&i<total)show();else finish()};
+    nb.scrollIntoView({block:'nearest'});
+    nb.focus({preventScroll:true});
+  }
+  function finish(){
+    clearT();
+    var pct=Math.round(ok/total*100);
+    var done=over?i:total;
+    var passed=cfg.pass?ok>=cfg.pass:null;
+    if(store[cfg.id]===undefined||ok>store[cfg.id])store[cfg.id]=ok;
+    if(cfg.id==='zalik'&&passed)store.passed=true;
+    save();
+    var verdict;
+    if(cfg.pass)verdict=passed?'<div class="verdict ok">Зараховано</div><p class="muted" style="margin:0">'+pct+' %. Норматив 80 % виконано.</p>'
+      :'<div class="verdict bad">Не зараховано</div><p class="muted" style="margin:0">'+pct+' %. Потрібно щонайменше 80 %, тобто '+cfg.pass+' з '+total+'.</p>';
+    else verdict='<div class="verdict '+(pct>=80?'ok':'bad')+'">'+(pct>=80?'Добре':'Ще потренуйтесь')+'</div><p class="muted" style="margin:0">'+pct+' %'+(bestStreak>1?', найдовша серія '+bestStreak:'')+'.</p>';
+    var rev='';
+    if(wrong.length){
+      rev='<h2 class="sec" style="margin-block:8px 0">Розбір помилок</h2><div class="rev">'+wrong.map(function(q){return '<div><b>'+q.answerText+'</b>'+q.explain+'</div>'}).join('')+'</div>';
+    }
+    app.innerHTML=topbar(cfg.title)+'<div class="res"><div class="score">'+ok+'<small> / '+total+'</small></div>'+verdict+rev+
+      '<div class="btns"><button class="btn" id="again">Ще раз</button><button class="btn ghost" id="hm">До меню</button></div></div>';
+    document.getElementById('bk').onclick=home;
+    document.getElementById('hm').onclick=home;
+    document.getElementById('again').onclick=function(){start(cfg.id)};
+    window.scrollTo(0,0);
+  }
+  show();
+}
+
+/* ---------- ланцюжок ---------- */
+var STEPS=[
+ 'Командир привертає увагу сигналом «Увага»',
+ 'Командир чітко й повільно подає жест у зоні видимості',
+ 'Найближчий боєць повторює жест наступному',
+ 'Кожен, хто побачив жест, повторює його далі',
+ 'Останній у ланцюжку підтверджує: «Готовий» або «Зрозумів»',
+ 'Командир переходить до наступної команди'
+];
+var MAXERR=3;
+function chain(){
+  clearT();
+  var placed=[],mistakes=0,order=shuffle(STEPS.map(function(_,k){return k}));
+  function draw(msg,shakeIdx){
+    var slots=STEPS.map(function(_,n){
+      var has=placed[n]!==undefined;
+      return '<div class="slot'+(has?' full':'')+'"><span class="n">'+(n+1)+'</span><span>'+(has?STEPS[placed[n]]:'Крок '+(n+1))+'</span></div>';
+    }).join('');
+    var pool=order.filter(function(s){return placed.indexOf(s)<0}).map(function(s){
+      return '<button class="opt'+(s===shakeIdx?' shake':'')+'" data-s="'+s+'">'+STEPS[s]+'</button>';
+    }).join('');
+    app.innerHTML=topbar('Ланцюжок',mistakes?('Помилок '+mistakes+' / '+MAXERR):'')+
+      '<div class="q"><h2>Як передають сигнал по ланцюжку?</h2><p class="muted" style="margin:0">Торкайтеся дій у тому порядку, у якому вони відбуваються.</p>'+
+      '<div class="slots">'+slots+'</div>'+
+      (msg?'<div class="fb bad"><b>Не зараз</b>'+msg+'</div>':'')+
+      '<div class="pool">'+pool+'</div></div>';
+    document.getElementById('bk').onclick=home;
+    app.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){tap(+b.dataset.s)}});
+  }
+  function tap(s){
+    if(s===placed.length){placed.push(s);if(placed.length===STEPS.length)done();else draw()}
+    else if(++mistakes>=MAXERR){fail()}
+    else{draw('Ця дія відбувається не на кроці '+(placed.length+1)+'. Подумайте, що буде перед нею й після.',s)}
+  }
+  function fail(){
+    app.innerHTML=topbar('Ланцюжок')+
+      '<div class="res"><div class="verdict bad">Сигнал втрачено</div>'+
+      '<p class="muted" style="margin:0">Три помилки в порядку дій. Правильний порядок: '+STEPS.map(function(t,k){return (k+1)+') '+t}).join('; ')+'.</p>'+
+      '<div class="btns"><button class="btn" id="again">Ще раз</button><button class="btn ghost" id="hm">До меню</button></div></div>';
+    document.getElementById('bk').onclick=home;
+    document.getElementById('hm').onclick=home;
+    document.getElementById('again').onclick=chain;
+  }
+  function done(){
+    if(store.chain===undefined||mistakes<store.chain)store.chain=mistakes;
+    save();
+    var nodes='<div class="node c" style="animation-delay:0s">К</div>';
+    for(var n=1;n<=4;n++)nodes+='<div class="link"></div><div class="node" style="animation-delay:'+(n*.35)+'s">'+n+'</div>';
+    app.innerHTML=topbar('Ланцюжок')+
+      '<div class="res"><div class="verdict ok">Сигнал дійшов</div>'+
+      '<div class="chain" role="img" aria-label="Командир і чотири бійці в колоні">'+nodes+'</div>'+
+      '<p class="muted" style="margin:0">'+(mistakes===0?'Без помилок.':'Помилок: '+mistakes+'.')+' Командир не подає наступну команду, поки останній боєць не підтвердить, що зрозумів сигнал.</p>'+
+      '<div class="btns"><button class="btn" id="again">Ще раз</button><button class="btn ghost" id="hm">До меню</button></div></div>';
+    document.getElementById('bk').onclick=home;
+    document.getElementById('hm').onclick=home;
+    document.getElementById('again').onclick=chain;
+  }
+  draw();window.scrollTo(0,0);
+}
+
+home();
+</script>
+</body>
+</html>
